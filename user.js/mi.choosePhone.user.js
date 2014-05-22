@@ -1,10 +1,13 @@
 // ==UserScript==
-
-// @name        xiaomi
+// @name        xiaomiPhone Helper
 // @namespace   anyfly.com
-// @include     http://static.xiaomi.cn/515
+// @description Help to xiaomi
+// @include     *www.*mi.com/event/choose/phone/*//
+// @include     *s1.mi.com/open/choosePhone*
 // @version     1
-// @grant       none
+// @require     http://ajax.googleapis.com/ajax/libs/jquery/1.3.1/jquery.min.js
+// @require     http://noyesno.net/include/JSON.js
+// @author      anyfly@gmail.com
 // ==/UserScript==
 
 //----------------data struts----------------
@@ -23,53 +26,41 @@ var url = window.location.toString();
 var delay_default = 200;
 var delay_default_short = 50;
 var delay_default_long = 800;
-var intervalstart = setInterval(startHelper, 300);
+addLeftSide(300);
+
+var indexVal = GM_getValue("indexVal", 0) + 1;
+var ptype = 3;//$("#stepTypeLists li").size();
+var tindex = ptype == 0 ? 0 : Math.floor(indexVal%ptype);
+var vindex = ptype == 0 ? 0 : Math.floor(indexVal/ptype);
+
+addRow("ptype=" + ptype + ":indexVal=" + indexVal + ":tindex=" + tindex + ":vindex=" + vindex);
+
+setTimeout(startHelper, 1000);
+
+if (ptype != 0 && indexVal >= ptype * 3 )
+{
+	indexVal = 0;
+}
+//GM_openInTab
 //$(startHelper);
 if (debugJS){
 	GM_log("run user js...");
 }
+GM_setValue("indexVal", indexVal);
 //----------------code here----------------
 function command(text, eggindex) {
-	exec({vals:[['#commentContent',text]], 
-	clicks:["#sentBtn"]}, delay_default_short);
-	exec({clicks:[".egg[data-index=" + eggindex + "]"]}, delay_default);
-	exec({clicks:[".close",".playagain"]}, delay_default_short);
+	exec({clicks:["#stepTypeLists li:eq("+(tindex)+")"]}, delay_default_short);
+	exec({clicks:["#stepVersionLists li:eq("+(vindex)+"),#stepVersionLists li:first"]}, delay_default_short);
+	exec({clicks:["#stepColorLists li:eq(0)"]}, delay_default_short);
+	exec({clicks:["#submitBtn", ":visible #boxCacheBtn"]}, delay_default_short);
 }
 function startHelper() {
 	if (debugJS){
 		GM_log("execute...");
-	}
-	command("1267abc123xasd2", 3); 	
-	command("abc123456", 2); 
-	command("1abc234addf", 1); 
-	
+	}	
+	setInterval(command, 100);
+	//document.evaluate("a.phoneSku=1");	
 } 
-//----------------hook----------------
-/**
- * hook系统中的已有函数
- * @param object {Object} 要hook的函数所在的对象
- * @param name {String} 要hook的函数名称
- * @param pre {Function} 原函数执行前要执行的动作
- * @param post {Function} 原函数执行后要执行的动作
- * @return 旧函数的返回值
- */
-function hook(object, func, pre, post) {
-  var f = object[func];                       // 保存旧函数
-  object[func] = function() {                 // 定义新函数
-    if (pre) pre.apply(window, arguments);    // 旧函数执行前执行的自定义函数
-    var ret = f.apply(object, arguments);     // 执行旧函数
-    if (post) post.apply(window, arguments);  // 旧函数执行后执行的自定义函数
-    return ret;
-  }
-}
-/*
-setTimeout(function() {
-  hook(unsafeWindow.object, 
-       "foo", 
-       function(){alert("pre")}, 
-       function(){alert("post")}
-  );
-}, 1000);*/
 //----------------ajax----------------
 function getRequest(url1, callbackfunc) {		
 	GM_xmlhttpRequest({
@@ -123,7 +114,7 @@ function addToolsBtn(parent, html, js){
 	return a;
 }
 function addRow(html1){
-	var oLi = document.createElement('li');
+	var oLi = document.createElement('span');
 /*
 	var oCheck = document.createElement('input');
 	oCheck.setAttribute('type','checkbox');
@@ -147,7 +138,7 @@ function exec(eobj, delay) {
 	var result = false;
 	if (eobj.vals)	{
 		//for(var i=eobj.vals.length-1;i>=0;i--) {
-		result = setValue(eobj.vals) || result;
+		result = setValue(eobj.vals, ) || result;
 		//}
 	} 
 	//var clickfunc = 
@@ -166,7 +157,7 @@ function clickfunc(clicks) {
 		for(var i=clicks.length-1;i>=0;i--) {
 			var namearr = clicks[i].split(",");
 			for(var j=namearr.length-1;j>=0;j--) {	
-				result = simulateClickEvent(namearr[j]) || result;
+				result = simulateClickEvent(namearr[j]) || result;				
 			}
 		}
 	}
@@ -197,10 +188,13 @@ function isObjExisted(obj) {
   	return (typeof(obj) != "undefined" && obj != null);
 }
 function simulateClickEvent(ename) {
-	var obj = $(ename).get(0);
+	var obj1 = $(ename);
+	var obj = obj1.get(0);
 	if (!isObjExisted(obj)) {
 		return;
 	}
+	obj1.removeClass("item-sold");
+	obj1.removeClass("btn-disabled");
 	if (debugJS){
 		GM_log("click element:" + ename);
 	}
