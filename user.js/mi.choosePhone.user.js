@@ -4,6 +4,7 @@
 // @description Help to xiaomi
 // @include     *www.*mi.com/event/choose/phone/*//
 // @include     *s1.mi.com/open/choosePhone*
+// @include     *www.mi.com/buyphone/hongmi1s*
 // @version     1
 // @require     http://ajax.googleapis.com/ajax/libs/jquery/1.3.1/jquery.min.js
 // @require     http://noyesno.net/include/JSON.js
@@ -11,7 +12,7 @@
 // ==/UserScript==
 
 //----------------data struts----------------
-var debugJS = false;
+var debugJS = true;
 var NYNO = {};
 /*
 NYNO.config = JSON.parse(GM_getValue('config','{}'));
@@ -26,17 +27,16 @@ var url = window.location.toString();
 var delay_default = 200;
 var delay_default_short = 50;
 var delay_default_long = 800;
-addLeftSide(300);
+//buildUI();
 
 var indexVal = GM_getValue("indexVal", 0) + 1;
 var ptype = 3;//$("#stepTypeLists li").size();
 var tindex = ptype == 0 ? 0 : Math.floor(indexVal%ptype);
 var vindex = ptype == 0 ? 0 : Math.floor(indexVal/ptype);
 
-addRow("ptype=" + ptype + ":indexVal=" + indexVal + ":tindex=" + tindex + ":vindex=" + vindex);
+addRowText("<br/>ptype=" + ptype + ":indexVal=" + indexVal + ":tindex=" + tindex + ":vindex=" + vindex);
 
-setTimeout(startHelper, 1000);
-
+//setTimeout(startHelper, 1000);
 if (ptype != 0 && indexVal >= ptype * 3 )
 {
 	indexVal = 0;
@@ -46,19 +46,24 @@ if (ptype != 0 && indexVal >= ptype * 3 )
 if (debugJS){
 	GM_log("run user js...");
 }
-GM_setValue("indexVal", indexVal);
+//exec({clicks:["#xmDmError:visible #xmDmReload"]}, delay_default_short);
+//GM_setValue("indexVal", indexVal);
 //----------------code here----------------
+function buildUI() {
+	addLeftSide(500);
+	addTools();
+}
 function command(text, eggindex) {
-	exec({clicks:["#stepTypeLists li:eq("+(tindex)+")"]}, delay_default_short);
-	exec({clicks:["#stepVersionLists li:eq("+(vindex)+"),#stepVersionLists li:first"]}, delay_default_short);
-	exec({clicks:["#stepColorLists li:eq(0)"]}, delay_default_short);
-	exec({clicks:["#submitBtn", ":visible #boxCacheBtn"]}, delay_default_short);
+	exec({clicks:["#stepTypeLists li:visible:eq("+(tindex)+")"]}, delay_default_short);
+	exec({clicks:["#stepVersionLists li:visible:eq("+(vindex)+"),#stepVersionLists li:visible:first"]}, delay_default_short);
+	exec({clicks:["#stepColorLists li:visible:eq(0)"]}, delay_default_short);
+	exec({clicks:["#submitBtn", "div:visible #boxCacheBtn"]}, delay_default_short);
 }
 function startHelper() {
 	if (debugJS){
 		GM_log("execute...");
 	}	
-	setInterval(command, 100);
+	setTimeout(command, 100);
 	//document.evaluate("a.phoneSku=1");	
 } 
 //----------------ajax----------------
@@ -86,25 +91,74 @@ function processResponse(response) {
 }
 //----------------left side----------------
 function addLeftSide(spanWidth) {
-	GM_addStyle("#tools {border:2px solid #3366cc; width:" + spanWidth + "px;position:fixed;top:15px;left:-" + (spanWidth - 5) + "px;text-align:left;padding:1em 0.3em;overflow:scroll;background-color:white;height:96%;}");
+	GM_addStyle("#toolsuserjs {border:2px solid #3366cc; width:" + spanWidth + "px;position:fixed;top:50px;left:-" + (spanWidth - 5) + "px;text-align:left;padding:1em 0.3em;overflow:scroll;background-color:white;height:80%;}");
+	GM_addStyle(" input.text1 {color: #000000;text-decoration: none;height: 19px;border: 1px solid #C8D6E1;font-family: 'Arial';vertical-align:middle;font-size:12px; text-indent:1px !important;text-indent:0;margin:1px 0px !important; margin:0;}");
 	var eSidepane = document.createElement('div');
-	eSidepane.setAttribute('id','tools');
-	eSidepane.innerHTML = '<span></span><hr/><ul></ul>'; 
+	eSidepane.setAttribute('id','toolsuserjs');
+	eSidepane.innerHTML = '<span id="menu1"></span><hr/><ul id="list1"></ul><hr/><span id="body1"></span>'; 
 
 	$(document.body).append(eSidepane);
-	$("#tools").hover(function(){
+	$("#toolsuserjs").hover(function(){
                 $(this).animate({left:"0px"}, 200);
             }, function(){
                 $(this).animate({left:"-" + (spanWidth - 5) + "px"}, 200);
            });
 }
+function timeReq() {
+	times = 0;
+	intervalstart = setTimeout(startHelper, 500);
+}
+function startReq() {
+	times = 0;
+	intervalstart = setInterval(startHelper, 500);
+}
+function stopReq() {
+	clearInterval(intervalstart);
+}
 function addTools(){
-	var parent = $("#tools span");
-	addToolsBtn(parent, "view all", ";").addEventListener('click',function(evt) {
-		
+	var parent = $("#toolsuserjs #menu1");
+	addInput(parent);
+	addToolsBtn(parent, "open", ";").addEventListener('click',function(evt) {
+		timeReq();
 	} ,true);
-	//addToolsBtn(parent, "Btn1", ";");
-	//addToolsBtn(parent, "Btn2", ";");
+	addToolsBtn(parent, "start", ";").addEventListener('click',function(evt) {
+		startReq();
+	} ,true);
+	addToolsBtn(parent, "stop", ";").addEventListener('click',function(evt) {
+		stopReq();
+	} ,true);
+	addToolsBtn(parent, "clear", ";").addEventListener('click',function(evt) {
+		clearAll();
+	} ,true);
+	addToolsBtn(parent, "save", ";").addEventListener('click',function(evt) {
+		saveConfig();
+	} ,true);	
+}
+
+function addInput(parent){
+	var oinput = document.createElement('input');
+	oinput.setAttribute('type','text');
+	oinput.setAttribute('size','50');
+	oinput.setAttribute('class','text1');
+	oinput.addEventListener('keypress',function(evt) {
+		var event = evt || unsafeWindow.event;
+		switch (event.keyCode) {
+			case 13: //Enter		
+				addGood(this.value);
+				this.value="";
+				event.cancelBubble = true;
+				event.returnValue = false;
+				break;
+			case 27: //Escape
+				this.value="";
+				event.cancelBubble = true;				
+				break;
+			default:
+				break;
+		}
+	} ,true);	
+	parent.append(oinput).append(document.createTextNode("  "));
+	//oinput.setAttribute('type','text');
 }
 function addToolsBtn(parent, html, js){
 	var a = document.createElement('a');	
@@ -113,32 +167,43 @@ function addToolsBtn(parent, html, js){
     parent.append(a).append(document.createTextNode("  "));
 	return a;
 }
-function addRow(html1){
-	var oLi = document.createElement('span');
-/*
-	var oCheck = document.createElement('input');
-	oCheck.setAttribute('type','checkbox');
-	oCheck.setAttribute('muser12',user_name);
-	if (ischecked)
-	{
-		oCheck.setAttribute('checked','checked');
-	}	
-	oCheck.addEventListener('click',function(evt) {
-		var u = evt.target.getAttribute('muser12');
-		
-	} ,true);
-	oLi.appendChild(oCheck);*/
-	$(oLi).html(html1);	
-
-	$('#tools ul').append(oLi);
+function addRowText(html1){
+	//var oLi    = document.createElement('li');
+	
+	//$(oLi).html(html1);
+	$('#toolsuserjs #body1').append(html1);
 }
-
+function addList(html1, gcode){
+	var oLi    = document.createElement('li');
+	if (gcode != "")
+	{
+	
+	oLi.setAttribute('gcode',gcode);
+	
+	var a = document.createElement('a');	
+	a.href=prefixUrl + gcode + suffixUrl;  
+	a.innerHTML=(++liIndex) + "&nbsp;&nbsp;&nbsp;"+gcode; 
+	a.setAttribute('target','_blank');	
+	oLi.appendChild(a).appendChild(document.createTextNode("  "));
+	a = document.createElement('a');	
+	a.href="javascript:;";  
+	a.innerHTML="delete"; 
+	a.addEventListener('click',function(evt){
+		$("#toolsuserjs ul li[gcode=" + gcode + "]").remove();
+		delete NYNO.config.codes[gcode];		
+		} ,true);
+	oLi.appendChild(a).appendChild(document.createTextNode("  "));
+	}
+	//oLi.appendChild(document.createTextNode('('+gcode+') '));
+	//$(oLi).html(html1);
+	$('#toolsuserjs ul').append(oLi);
+}
 //----------------util----------------
 function exec(eobj, delay) {
 	var result = false;
 	if (eobj.vals)	{
 		//for(var i=eobj.vals.length-1;i>=0;i--) {
-		result = setValue(eobj.vals, ) || result;
+		result = setValue(eobj.vals) || result;
 		//}
 	} 
 	//var clickfunc = 
